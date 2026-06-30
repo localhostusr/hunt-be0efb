@@ -287,20 +287,20 @@
 
   <div class="card">
     <h3>Scoring (June 26)</h3>
-    <div class="scroll">
-      <table class="score">
-        <thead><tr><th>Criteria (higher is better)</th><th>Mortgage</th><th>Title Ins</th><th>Insurance</th><th>Medical</th><th>Other</th></tr></thead>
-        <tbody>
-          <tr><td>Speed to employment / income</td><td class="s">5</td><td class="s">3</td><td class="s">3</td><td class="s">2</td><td class="s">1</td></tr>
-          <tr><td>Pay now</td><td class="s">2<small>TBD</small></td><td class="s">3<small>$60-80k</small></td><td class="s">5<small>$80k</small></td><td class="s">3<small>$65-85k</small></td><td class="s">1<small>TBD</small></td></tr>
-          <tr><td>Earning potential</td><td class="s">4<small>$200-300k</small></td><td class="s">3<small>$150-200k</small></td><td class="s">2<small>$120-140k</small></td><td class="s">4<small>$150-200k</small></td><td class="s">1<small>TBD</small></td></tr>
-          <tr><td>X-factor / interest</td><td class="s">5</td><td class="s">4</td><td class="s">3</td><td class="s">2</td><td class="s">1</td></tr>
-          <tr><td>Time to full earnings</td><td class="s">4<small>~3 yr</small></td><td class="s">3<small>3-5 yr</small></td><td class="s">2<small>5 yr</small></td><td class="s">2<small>TBD</small></td><td class="s">1<small>TBD</small></td></tr>
-          <tr class="sub"><td>Subtotal</td><td class="s win">20</td><td class="s">16</td><td class="s">15</td><td class="s">13</td><td class="s">5</td></tr>
-          <tr><td>Adjusted (unknowns)</td><td class="s">20</td><td class="s">16</td><td class="s">15</td><td class="s">16-17*</td><td class="s">5</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <label style="display:block;font-size:13px;margin:0 0 10px;cursor:pointer;font-weight:600;">
+      <input type="checkbox" id="durToggle" style="width:auto;"> Include a "Durability / economic resilience" row, and watch the totals reshuffle
+    </label>
+    <div class="scroll" id="scoreTableWrap"></div>
+    <details style="margin-top:10px;font-size:13px;">
+      <summary style="cursor:pointer;color:#007185;font-weight:600;">Why these durability scores</summary>
+      <ul class="tight" style="margin-top:6px;">
+        <li><b>Insurance (5):</b> much of it is mandatory (auto, workers comp, health, lender-required property), demand is inelastic, and renewals are sticky residual income. Recession-resistant and national, not tied to San Diego.</li>
+        <li><b>Medical (4):</b> healthcare is non-discretionary with a demographic tailwind, and trauma is counter-cyclical. Soft spots: elective procedures dip in downturns and hospital capital budgets tighten.</li>
+        <li><b>Title Insurance (2):</b> rides real estate transaction volume, so it is cyclical and rate-sensitive, though agent relationships persist through slow stretches.</li>
+        <li><b>Mortgage (1):</b> the most volatile and rate-sensitive, refi volume can vanish, comp is commission-only, and the industry does mass layoffs in downturns. Maximally exposed to the rate cycle and local housing.</li>
+      </ul>
+      <p class="savehint">The point: Mortgage, the current #1, is the flakiest lane here; Insurance and Medical are the most durable. Turn the row on and Mortgage's lead nearly disappears, worth weighing given Shane left beverage precisely because it was too flaky.</p>
+    </details>
     <div class="note" style="margin-top:12px;">
       <b>Read the scores as directional, not precise.</b> Two things to keep in mind: (1) "speed" is counted twice (rows 1 and 5), which widens Mortgage's lead. (2) Do not read this as "Medical pays slowly", a salaried associate role can pay <b>sooner and more steadily</b> than commission-based mortgage lending, even if it takes longer to land. The RE-primary call stands on the real reasons (existing leads + the August clock), not the point spread.
       <br><br><b>Update (June 29):</b> a closer look confirms Medical is a genuine <b>16 to 17</b>, the original 13 was too harsh (a salaried associate role pays a solid base from day one, and the OR work is high X-factor). It stays <b>secondary</b> only for sequencing: no warm lead yet and it is the slowest to land before August. Pursue it as a cheap parallel exploration; if a lead or the free consult turns positive, it earns a promotion.
@@ -913,6 +913,35 @@ function renderPlan(){
   });
 }
 renderPlan();
+
+/* ---------------- scoring table with durability toggle ---------------- */
+const SC_COLS=["Mortgage","Title Ins","Insurance","Medical","Other"];
+const SC_ROWS=[
+  {l:"Speed to employment / income", s:[5,3,3,2,1]},
+  {l:"Pay now", s:[2,3,5,3,1], n:["TBD","$60-80k","$80k","$65-85k","TBD"]},
+  {l:"Earning potential", s:[4,3,2,4,1], n:["$200-300k","$150-200k","$120-140k","$150-200k","TBD"]},
+  {l:"X-factor / interest", s:[5,4,3,2,1]},
+  {l:"Time to full earnings", s:[4,3,2,2,1], n:["~3 yr","3-5 yr","5 yr","TBD","TBD"]}
+];
+const SC_DUR={l:"Durability / economic resilience", s:[1,2,5,4,1], n:["rate & cycle exposed","RE-cyclical","mandatory, sticky","demographic tailwind","TBD"]};
+function sc_cell(v,note){return `<td class="s">${v}${note?`<small>${note}</small>`:""}</td>`;}
+function sc_sub(label,vals){
+  const mx=Math.max(...vals);
+  return `<tr class="sub"><td>${label}</td>`+vals.map(v=>`<td class="s ${v===mx?'win':''}">${v}</td>`).join("")+`</tr>`;
+}
+function renderScore(){
+  const t=document.getElementById('durToggle'); if(!t) return;
+  const inc=t.checked; save("shaneDurToggle",inc);
+  const rows=SC_ROWS.concat(inc?[SC_DUR]:[]);
+  let h=`<table class="score"><thead><tr><th>Criteria (higher is better)</th>${SC_COLS.map(c=>`<th>${c}</th>`).join("")}</tr></thead><tbody>`;
+  rows.forEach(r=>{ h+=`<tr><td>${r.l}</td>`+r.s.map((v,i)=>sc_cell(v, r.n?r.n[i]:"")).join("")+`</tr>`; });
+  const core=SC_COLS.map((_,c)=>SC_ROWS.reduce((a,r)=>a+r.s[c],0));
+  h+=sc_sub("Subtotal (core 5 factors)", core);
+  if(inc){ h+=sc_sub("Subtotal + durability", SC_COLS.map((_,c)=>core[c]+SC_DUR.s[c])); }
+  h+=`</tbody></table>`;
+  document.getElementById('scoreTableWrap').innerHTML=h;
+}
+(function(){const t=document.getElementById('durToggle'); if(t){ t.checked=!!load("shaneDurToggle",false); t.addEventListener('change',renderScore); renderScore(); }})();
 
 /* ---------------- Jargon ---------------- */
 const JARGON=[
